@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Page</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        header {
+            background-color: #343a40;
+            color: #fff;
+            padding: 10px;
+            position: relative;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            padding-left: 10px;
+        }
+
+        #viewCart {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        #viewCart:hover {
+            background-color: #218838;
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        #loadData {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #loadData:hover {
+            background-color: #0056b3;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+            background-color: #fff;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        td img {
+            width: 80px;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quantity-controls button {
+            background-color: #28a745;
+            color: white;
+            padding: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .quantity-controls input {
+            width: 40px;
+            text-align: center;
+            margin: 0 5px;
+        }
+
+        .quantity-controls button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Product List</h1>
+        <a href="cart.html" id="viewCart">View Cart</a>
+    </header>
+
+    <main>
+        <button id="loadData">Load Products</button>
+
+        <h2>Available Products</h2>
+        <table id="table">
+            <tr>
+                <th>S.No</th>
+                <th>Title</th>
+                <th>Price</th>
+                <th>Image</th>
+                <th>Quantity</th>
+                <th>Add to Cart</th>
+            </tr>
+        </table>
+    </main>
+
+    <script>
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+        document.getElementById("loadData").addEventListener("click", function() {
+            fetch('https://fakestoreapi.com/products')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(json => {
+                    const table = document.getElementById('table');
+                    table.innerHTML = `
+                        <tr>
+                            <th>S.No</th>
+                            <th>Title</th>
+                            <th>Price</th>
+                            <th>Image</th>
+                            <th>Quantity</th>
+                            <th>Add to Cart</th>
+                        </tr>
+                    `;
+
+                    json.forEach((product, index) => {
+                        let tableRow = `<tr>`;
+                        tableRow += `<td>${index + 1}</td>`;
+                        tableRow += `<td>${product.title}</td>`;
+                        tableRow += `<td>$${product.price}</td>`;
+                        tableRow += `<td><img src="${product.image}" alt="${product.title}"></td>`;
+                        tableRow += `
+                            <td>
+                                <div class="quantity-controls">
+                                    <button onclick="changeQuantity(${product.id}, -1)">-</button>
+                                    <input type="number" id="quantity-${product.id}" value="1" min="1" />
+                                    <button onclick="changeQuantity(${product.id}, 1)">+</button>
+                                </div>
+                            </td>`;
+                        tableRow += `<td><button onclick="addToCart(${product.id}, '${product.title}', ${product.price})">Add to Cart</button></td>`;
+                        tableRow += `</tr>`;
+                        table.innerHTML += tableRow;
+                    });
+                })
+                .catch(error => {
+                    console.error('There has been a problem with your fetch operation:', error);
+                });
+        });
+
+        function changeQuantity(id, delta) {
+            const quantityInput = document.getElementById(`quantity-${id}`);
+            let currentQuantity = parseInt(quantityInput.value) || 1;
+
+            currentQuantity += delta;
+            if (currentQuantity < 1) currentQuantity = 1;
+
+            quantityInput.value = currentQuantity;
+        }
+
+        function addToCart(id, title, price) {
+            const quantityInput = document.getElementById(`quantity-${id}`);
+            const quantity = parseInt(quantityInput.value) || 1;
+
+            const existingProduct = cart.find(item => item.id === id);
+
+            if (existingProduct) {
+                existingProduct.quantity += quantity;
+            } else {
+                cart.push({ id, title, price, quantity });
+            }
+
+            // Store cart in local storage
+            localStorage.setItem('cart', JSON.stringify(cart));
+            alert(`${title} has been added to your cart.`);
+        }
+    </script>
+</body>
+</html>
